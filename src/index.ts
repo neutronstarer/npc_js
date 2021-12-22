@@ -1,37 +1,37 @@
 import { Cancelable, Disposable } from "@neutronstarer/cancelable"
 
-export { Cancelable, Disposable }
+export {Cancelable}
 
 export class NPC {
   constructor(send?: Send | undefined) {
     if (send != undefined) {
-      this._send = send
+      this.sendMessage = send
       return
     }
-    this._send = this.send
+    this.sendMessage = this.send
   }
 
   on(method: string, handle: Handle) {
-    this._handles.set(method, handle)
+    this.handles.set(method, handle)
   }
 
   async emit(method: string, param: any|undefined = undefined) {
-    await this._send(new Message(Typ.emit, undefined, method, param))
+    await this.sendMessage(new Message(Typ.emit, undefined, method, param))
   }
 
-  async deliver(method: string, param: any|undefined = undefined, timeout: number|undefined = 0, cancelable: Cancelable | undefined = undefined, onNotify: Notify | undefined = undefined): Promise<any> {
-    const id = this._id++
+  async deliver<T>(method: string, param: any|undefined = undefined, timeout: number|undefined = 0, cancelable: Cancelable | undefined = undefined, onNotify: Notify | undefined = undefined): Promise<T> {
+    const id = this.id++
     let resolve: (value: any) => void
     let reject: (value?: any) => void
     let completed = false
     let timer: any = undefined
     let disposable: Disposable | undefined = undefined
-    const promise = new Promise<any>((rs, rj) => {
+    const promise = new Promise<T>((rs, rj) => {
       resolve = rs
       reject = rj
     })
     if (onNotify != undefined) {
-      this._notifies.set(id, onNotify)
+      this.notifies.set(id, onNotify)
     }
     const reply = (param: any = undefined, error: any = undefined): boolean => {
       if (completed) {
@@ -43,8 +43,8 @@ export class NPC {
       } else {
         resolve(param)
       }
-      this._notifies.delete(id)
-      this._replies.delete(id)
+      this.notifies.delete(id)
+      this.replies.delete(id)
       if (timer != undefined) {
         clearTimeout(timer)
       }
@@ -53,22 +53,22 @@ export class NPC {
       }
       return true
     }
-    this._replies.set(id, reply)
+    this.replies.set(id, reply)
     if (cancelable != undefined) {
       disposable = cancelable.whenCancel(async () => {
         if (reply(undefined, "cancelled")) {
-          await this._send(new Message(Typ.cancel, id))
+          await this.sendMessage(new Message(Typ.cancel, id))
         }
       })
     }
     if (timeout > 0) {
       timer = setTimeout(async () => {
         if (reply(undefined, "timedout")) {
-          await this._send(new Message(Typ.cancel, id))
+          await this.sendMessage(new Message(Typ.cancel, id))
         }
       }, timeout)
     }
-    await this._send(new Message(Typ.deliver, id, method, param))
+    await this.sendMessage(new Message(Typ.deliver, id, method, param))
     return promise
   }
 
@@ -84,7 +84,7 @@ export class NPC {
           if (method == undefined) {
             break
           }
-          const handle = this._handles.get(method)
+          const handle = this.handles.get(method)
           if (handle == undefined) {
             break
           }
@@ -101,9 +101,9 @@ export class NPC {
           if (method == undefined) {
             break
           }
-          const handle = this._handles.get(method)
+          const handle = this.handles.get(method)
           if (handle == undefined) {
-            await this._send(new Message(Typ.ack, id, undefined, undefined, "unimplemented"))
+            await this.sendMessage(new Message(Typ.ack, id, undefined, undefined, "unimplemented"))
             break
           }
           let completed = false
@@ -112,24 +112,24 @@ export class NPC {
               return
             }
             completed = true
-            this._cancels.delete(id)
-            await this._send(new Message(Typ.ack, id, undefined, param, error))
+            this.cancels.delete(id)
+            await this.sendMessage(new Message(Typ.ack, id, undefined, param, error))
           }
           try {
             const cancelable = new Cancelable()
-            this._cancels.set(id, () => {
+            this.cancels.set(id, () => {
               if (completed) {
                 return
               }
               completed = true
-              this._cancels.delete(id)
+              this.cancels.delete(id)
               cancelable.cancel()
             })
             const r = await handle(message.param, cancelable, async (param: any) => {
               if (completed) {
                 return
               }
-              await this._send(new Message(Typ.notify, id, undefined, param))
+              await this.sendMessage(new Message(Typ.notify, id, undefined, param))
             })
             await reply(r, undefined)
           } catch (e) {
@@ -143,7 +143,7 @@ export class NPC {
           if (id == undefined) {
             break
           }
-          const reply = this._replies.get(id)
+          const reply = this.replies.get(id)
           if (reply == undefined) {
             break
           }
@@ -155,7 +155,7 @@ export class NPC {
         if (id == undefined) {
           break
         }
-        const notify = this._notifies.get(id)
+        const notify = this.notifies.get(id)
         if (notify == undefined) {
           break
         }
@@ -168,7 +168,7 @@ export class NPC {
           if (id == undefined) {
             break
           }
-          const cancel = this._cancels.get(id)
+          const cancel = this.cancels.get(id)
           if (cancel == undefined) {
             break
           }
@@ -183,12 +183,12 @@ export class NPC {
   private _(_: any): void {
 
   }
-  private _send: Send
-  private _id = 0
-  private _cancels = new Map<number, () => void>()
-  private _replies = new Map<number, (param: any|undefined, error: any|undefined) => boolean>()
-  private _notifies = new Map<number, Notify>()
-  private _handles = new Map<string, Handle>()
+  private sendMessage: Send
+  private id = 0
+  private cancels = new Map<number, () => void>()
+  private replies = new Map<number, (param: any|undefined, error: any|undefined) => boolean>()
+  private notifies = new Map<number, Notify>()
+  private handles = new Map<string, Handle>()
 }
 
 
