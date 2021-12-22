@@ -16,7 +16,7 @@ export class NPC {
   }
 
   async emit(method: string, param: any|undefined = undefined) {
-    await this._send(new MessageImpl(Typ.emit, undefined, method, param))
+    await this._send(new Message(Typ.emit, undefined, method, param))
   }
 
   async deliver(method: string, param: any|undefined = undefined, timeout: number|undefined = 0, cancelable: Cancelable | undefined = undefined, onNotify: Notify | undefined = undefined): Promise<any> {
@@ -57,18 +57,18 @@ export class NPC {
     if (cancelable != undefined) {
       disposable = cancelable.whenCancel(async () => {
         if (reply(undefined, "cancelled")) {
-          await this._send(new MessageImpl(Typ.cancel, id))
+          await this._send(new Message(Typ.cancel, id))
         }
       })
     }
     if (timeout > 0) {
       timer = setTimeout(async () => {
         if (reply(undefined, "timedout")) {
-          await this._send(new MessageImpl(Typ.cancel, id))
+          await this._send(new Message(Typ.cancel, id))
         }
       }, timeout)
     }
-    await this._send(new MessageImpl(Typ.deliver, id, method, param))
+    await this._send(new Message(Typ.deliver, id, method, param))
     return promise
   }
 
@@ -103,7 +103,7 @@ export class NPC {
           }
           const handle = this._handles.get(method)
           if (handle == undefined) {
-            await this._send(new MessageImpl(Typ.ack, id, undefined, undefined, "unimplemented"))
+            await this._send(new Message(Typ.ack, id, undefined, undefined, "unimplemented"))
             break
           }
           let completed = false
@@ -113,7 +113,7 @@ export class NPC {
             }
             completed = true
             this._cancels.delete(id)
-            await this._send(new MessageImpl(Typ.ack, id, undefined, param, error))
+            await this._send(new Message(Typ.ack, id, undefined, param, error))
           }
           try {
             const cancelable = new Cancelable()
@@ -129,7 +129,7 @@ export class NPC {
               if (completed) {
                 return
               }
-              await this._send(new MessageImpl(Typ.notify, id, undefined, param))
+              await this._send(new Message(Typ.notify, id, undefined, param))
             })
             await reply(r, undefined)
           } catch (e) {
@@ -191,6 +191,22 @@ export class NPC {
   private _handles = new Map<string, Handle>()
 }
 
+
+export class Message {
+  constructor(typ: Typ, id: number | undefined = undefined, method: string | undefined = undefined, param: any = undefined, error: any = undefined) {
+    this.typ = typ
+    this.id = id
+    this.method = method
+    this.param = param
+    this.error = error
+  }
+  readonly typ: Typ
+  readonly id: number | undefined
+  readonly method: string | undefined
+  readonly param: any
+  readonly error: any
+}
+
 export enum Typ {
   emit = 0,
   deliver = 1,
@@ -199,31 +215,8 @@ export enum Typ {
   cancel = 4
 }
 
-export interface Message {
-  typ: Typ
-  id: number | undefined
-  method: string | undefined
-  param: any
-  error: any
-}
-
 export type Notify = (param: any|undefined) => Promise<void>
 
 export type Handle = (param: any|undefined, cancelable: Cancelable, notify: Notify) => Promise<any>
 
 export type Send = (message: Message) => Promise<void>
-
-class MessageImpl implements Message {
-  constructor(typ: Typ, id: number | undefined = undefined, method: string | undefined = undefined, param: any = undefined, error: any = undefined) {
-    this.typ = typ
-    this.id = id
-    this.method = method
-    this.param = param
-    this.error = error
-  }
-  typ: Typ
-  id: number | undefined
-  method: string | undefined
-  param: any
-  error: any
-}
