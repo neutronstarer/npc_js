@@ -71,7 +71,7 @@ export class NPC {
   }
 
   async send(message: Message): Promise<void> {
-    this._(message)
+    this._send(message)
   }
 
   async receive(message: Message): Promise<void> {
@@ -178,15 +178,16 @@ export class NPC {
     }
   }
 
-  private _(_: any): void {
+  private _send(_: any): void {
 
   }
-  private sendMessage: Send
+  
   private id = 0
-  private cancels = new Map<number, () => void>()
-  private replies = new Map<number, (param: any|undefined, error: any|undefined) => boolean>()
-  private notifies = new Map<number, Notify>()
-  private handles = new Map<string, Handle>()
+  private readonly sendMessage: Send
+  private readonly cancels = new Map<number, () => void>()
+  private readonly replies = new Map<number, (param: any|undefined, error: any|undefined) => boolean>()
+  private readonly notifies = new Map<number, Notify>()
+  private readonly handles = new Map<string, Handle>()
 }
 
 
