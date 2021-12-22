@@ -1,7 +1,5 @@
 import { Cancelable, Disposable } from "@neutronstarer/cancelable"
 
-export {Cancelable}
-
 export class NPC {
   constructor(send?: Send | undefined) {
     if (send != undefined) {
