@@ -1,4 +1,5 @@
-import { Message, NPC, Cancelable} from '../src';
+import { Message, NPC} from '../src';
+import {Cancelable} from "@neutronstarer/cancelable";
 
 describe('index', () => {
     let npc0: NPC | undefined = undefined
