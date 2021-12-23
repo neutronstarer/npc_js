@@ -9,6 +9,15 @@ export class NPC {
     this.sendMessage = this.send
   }
 
+  close(){
+    this.cancels.forEach((v)=>{
+      v()
+    })
+    this.replies.forEach((v)=>{
+      v(undefined, "closed")
+    })
+  }
+
   on(method: string, handle: Handle) {
     this.handles.set(method, handle)
   }
@@ -71,7 +80,7 @@ export class NPC {
   }
 
   async send(message: Message): Promise<void> {
-    this._send(message)
+
   }
 
   async receive(message: Message): Promise<void> {
@@ -176,10 +185,6 @@ export class NPC {
       default:
         break
     }
-  }
-
-  private _send(_: any): void {
-
   }
   
   private id = 0
