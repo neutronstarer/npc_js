@@ -2,8 +2,8 @@ import { Message, NPC} from '../src';
 import {Cancelable} from "@neutronstarer/cancelable";
 
 describe('index', () => {
-    let npc0: NPC | undefined = undefined
-    let npc1: NPC | undefined = undefined
+    let npc0: NPC
+    let npc1: NPC
     npc0 = new NPC(async (message: Message) => {
         console.log("0_SEND" + JSON.stringify(message))
         await npc1?.receive(message)
@@ -19,7 +19,7 @@ describe('index', () => {
         const r = await npc0?.deliver("download", param, 0)
         expect(r).toEqual("Did download to " + param)
     })
-    it('timedout', async ()=>{
+    it('timeout', async ()=>{
         try {
             const param = "/path"
             const r = await npc0?.deliver("download", param, 1000)
@@ -28,7 +28,7 @@ describe('index', () => {
             expect(e).toEqual("timedout")
         }
     })
-    it('cancelled', async ()=>{
+    it('cancell', async ()=>{
         try {
             const param = "/path"
             const cancelable = new Cancelable()

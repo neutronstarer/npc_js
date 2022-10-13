@@ -1,38 +1,41 @@
 import { Cancelable, Disposable } from "@neutronstarer/cancelable"
 
+/// [NPC] Near Procedure Call
 export class NPC {
-  constructor(send?: Send | undefined) {
+  /// If [send] is null, you should extends NPC and override send().
+  /// [send] Send message function
+  constructor(send?: Send) {
     if (send != undefined) {
       this.sendMessage = send
       return
     }
     this.sendMessage = this.send
   }
-
-  close(){
+  /// close with [reason]
+  close(reason?: unknown){
     this.cancels.forEach((v)=>{
       v()
     })
     this.replies.forEach((v)=>{
-      v(undefined, "closed")
+      v(undefined,reason)
     })
   }
-
+  /// handle method
   on(method: string, handle: Handle) {
     this.handles.set(method, handle)
   }
-
-  async emit(method: string, param: any|undefined = undefined) {
+  /// emit method 
+  async emit(method: string, param: unknown) {
     await this.sendMessage(new Message(Typ.emit, undefined, method, param))
   }
 
-  async deliver<T>(method: string, param: any|undefined = undefined, timeout: number|undefined = 0, cancelable: Cancelable | undefined = undefined, onNotify: Notify | undefined = undefined): Promise<T> {
+  async deliver<T>(method: string, param?: unknown, timeout: number = 0, cancelable?: Cancelable, onNotify?: Notify): Promise<T> {
     const id = this.id++
-    let resolve: (value: any) => void
-    let reject: (value?: any) => void
+    let resolve: (value: T) => void
+    let reject: (value?: unknown) => void
     let completed = false
-    let timer: any = undefined
-    let disposable: Disposable | undefined = undefined
+    let timer: any
+    let disposable: Disposable
     const promise = new Promise<T>((rs, rj) => {
       resolve = rs
       reject = rj
@@ -40,7 +43,7 @@ export class NPC {
     if (onNotify != undefined) {
       this.notifies.set(id, onNotify)
     }
-    const reply = (param: any = undefined, error: any = undefined): boolean => {
+    const reply = (param: unknown, error: unknown): boolean => {
       if (completed) {
         return false
       }
@@ -48,16 +51,14 @@ export class NPC {
       if (error != undefined) {
         reject(error)
       } else {
-        resolve(param)
+        resolve(param as T)
       }
       this.notifies.delete(id)
       this.replies.delete(id)
       if (timer != undefined) {
         clearTimeout(timer)
       }
-      if (disposable != undefined) {
-        disposable.dispose()
-      }
+      disposable?.dispose()
       return true
     }
     this.replies.set(id, reply)
@@ -80,7 +81,7 @@ export class NPC {
   }
 
   async send(message: Message): Promise<void> {
-
+    
   }
 
   async receive(message: Message): Promise<void> {
@@ -95,7 +96,7 @@ export class NPC {
           if (handle == undefined) {
             break
           }
-          await handle(message.param, new Cancelable(), async (_: any) => { })
+          await handle(message.param, new Cancelable(), async (_) => { })
         }
         break
       case Typ.deliver:
@@ -114,7 +115,7 @@ export class NPC {
             break
           }
           let completed = false
-          const reply = async (param: any|undefined, error: any|undefined): Promise<void> => {
+          const reply = async (param: unknown, error: unknown): Promise<void> => {
             if (completed) {
               return
             }
@@ -132,7 +133,7 @@ export class NPC {
               this.cancels.delete(id)
               cancelable.cancel()
             })
-            const r = await handle(message.param, cancelable, async (param: any) => {
+            const r = await handle(message.param, cancelable, async (param: unknown) => {
               if (completed) {
                 return
               }
@@ -190,14 +191,14 @@ export class NPC {
   private id = 0
   private readonly sendMessage: Send
   private readonly cancels = new Map<number, () => void>()
-  private readonly replies = new Map<number, (param: any|undefined, error: any|undefined) => boolean>()
+  private readonly replies = new Map<number, (param: unknown, error: unknown) => boolean>()
   private readonly notifies = new Map<number, Notify>()
   private readonly handles = new Map<string, Handle>()
 }
 
 
 export class Message {
-  constructor(typ: Typ, id: number | undefined = undefined, method: string | undefined = undefined, param: any = undefined, error: any = undefined) {
+  constructor(typ: Typ, id?: number, method?: string, param?: unknown, error?: unknown) {
     this.typ = typ
     this.id = id
     this.method = method
@@ -205,10 +206,10 @@ export class Message {
     this.error = error
   }
   readonly typ: Typ
-  readonly id: number | undefined
-  readonly method: string | undefined
-  readonly param: any
-  readonly error: any
+  readonly id?: number
+  readonly method?: string 
+  readonly param: unknown
+  readonly error: unknown
 }
 
 export enum Typ {
@@ -219,8 +220,10 @@ export enum Typ {
   cancel = 4
 }
 
-export type Notify = (param: any|undefined) => Promise<void>
+export type Notify = (param: unknown) => Promise<void>
 
-export type Handle = (param: any|undefined, cancelable: Cancelable, notify: Notify) => Promise<any>
+export type Handle = (param: unknown, cancelable: Cancelable, notify: Notify) => Promise<unknown>
 
 export type Send = (message: Message) => Promise<void>
+
+export {Cancelable, Disposable}
