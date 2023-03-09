@@ -4,14 +4,16 @@ import {Cancelable} from "@neutronstarer/cancelable";
 describe('index', () => {
     let npc0: NPC
     let npc1: NPC
-    npc0 = new NPC(async (message: Message) => {
+    npc0 = new NPC()
+    npc1 = new NPC()
+    npc0.connect(async (message: Message) => {
         console.log("0_SEND" + JSON.stringify(message))
         await npc1?.receive(message)
-    })
-    npc1 = new NPC(async (message: Message) => {
+    });
+    npc1.connect(async (message: Message) => {
         console.log("1_SEND" + JSON.stringify(message))
         await npc0?.receive(message)
-    })
+    });
     config(npc0)
     config(npc1)
     it('deliver', async () => {
@@ -28,7 +30,7 @@ describe('index', () => {
             expect(e).toEqual("timedout")
         }
     })
-    it('cancell', async ()=>{
+    it('cancel', async ()=>{
         try {
             const param = "/path"
             const cancelable = new Cancelable()
@@ -64,7 +66,7 @@ function config(npc: NPC) {
                 clearInterval(timer)
             }
         }, 1000)
-        cancelable.whenCancel(()=>{
+        cancelable.whenCancel(async ()=>{
             reject("cancelled")
             if (timer != undefined){
                 clearInterval(timer)

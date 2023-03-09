@@ -1,5 +1,5 @@
 {
-  "version": "0.1.1",
+  "version": "4.2.0",
   "license": "BSD-3-Clause",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -57,12 +57,9 @@
     }
   ],
   "dependencies": {
-    "@neutronstarer/cancelable": "<1.0.0"
+    "@neutronstarer/cancelable": "^4.2.0"
   },
   "devDependencies": {
-    "@size-limit/preset-small-lib": "^7.0.4",
-    "husky": "^7.0.4",
-    "size-limit": "^7.0.4",
     "tsdx": "^0.14.1",
     "tslib": "^2.3.1",
     "typescript": "^4.5.4"
