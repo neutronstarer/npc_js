@@ -79,7 +79,7 @@ export class NPC {
       let timer: any
       let disposable: Disposable
       if (onNotify != undefined) {
-        this.notifies.set(id, async () => {
+        this.notifies.set(id, async (param) => {
           if (completed == true) {
             return
           }
