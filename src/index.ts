@@ -41,8 +41,8 @@ export class NPC {
   /// disconnect [reason]
   disconnect(reason?: unknown) {
     const error = reason ?? "disconnected"
-    var replies = new Array<(param: unknown, error: unknown) => boolean>()
-    var cancels = new Array<()=>void>()
+    const replies = new Array<(param: unknown, error: unknown) => boolean>()
+    const cancels = new Array<()=>void>()
     this.replies.forEach((v) => {
       replies.push(v)
     })
